@@ -1,0 +1,205 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>remote-cd demo</title>
+<link rel="stylesheet" href="theme.css">
+<style>body{display:grid;place-items:center;min-height:100vh}canvas{border-radius:12px}</style>
+<body>
+<canvas id="c"></canvas>
+<script type="module">
+// Flow A storyboard, drawn on a canvas so it can be encoded straight to GIF.
+// Open this file in a browser to preview; demo.mjs records it.
+import { GIFEncoder, quantize, applyPalette } from './gifenc.esm.js';
+
+const W = 960, H = 600, FS = 16, LH = 22, PADX = 28, TOP = 44;
+const C = {
+  bg: '#191724', chrome: '#151320', surface: '#1f1d2e', dialog: '#26233a', line: '#3a3653',
+  text: '#e0def4', dim: '#6e6a86', muted: '#908caa', mint: '#7ee7c7', lav: '#c4a7e7', red: '#eb6f92', selText: '#191724',
+};
+const cv = document.getElementById('c');
+cv.width = W; cv.height = H;
+const ctx = cv.getContext('2d', { willReadFrequently: true });
+await document.fonts.load(`${FS}px JBM`); await document.fonts.load(`bold ${FS}px JBM`);
+ctx.font = `${FS}px JBM`;
+const CW = ctx.measureText('M').width;
+const X = (col) => PADX + col * CW, Y = (row) => TOP + row * LH;
+
+function txt(col, row, s, color = C.text, bold = false) {
+  ctx.font = `${bold ? 'bold ' : ''}${FS}px JBM`;
+  ctx.fillStyle = color; ctx.textBaseline = 'middle';
+  ctx.fillText(s, X(col), Y(row) + LH / 2);
+}
+function box(c0, r0, c1, r1, fill, stroke) {
+  ctx.fillStyle = fill; ctx.fillRect(X(c0), Y(r0), X(c1) - X(c0), Y(r1) - Y(r0));
+  if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1; ctx.strokeRect(X(c0) + .5, Y(r0) + .5, X(c1) - X(c0) - 1, Y(r1) - Y(r0) - 1); }
+}
+function rrect(x, y, w, h, r, fill) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); ctx.fillStyle = fill; ctx.fill(); }
+
+const COLS = Math.floor((W - PADX * 2) / CW);
+const TREE = {
+  '/root': ['.cache/', '.config/', 'projects/', 'scratch/'],
+  '/root/projects': ['api-gateway/', 'dotfiles/', 'infra/', 'webapp/'],
+  '/root/projects/webapp': ['docs/', 'src/', 'tests/'],
+};
+const parent = (p) => p.replace(/\/[^/]+$/, '') || '/';
+
+function rows(dir, query) {
+  const base = [
+    { k: 'Use this directory', d: dir, special: true },
+    { k: '..', d: parent(dir), special: true },
+    ...TREE[dir].map((n) => ({ k: n, d: `${dir}/${n.slice(0, -1)}` })),
+  ];
+  return query ? base.filter((r) => !r.special && r.k.toLowerCase().includes(query)) : base;
+}
+
+// state: { footer, prompt, cursor, dialog: {dir, query, sel}, key, flash, end }
+function draw(s) {
+  ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
+  // window chrome
+  ctx.fillStyle = C.chrome; ctx.fillRect(0, 0, W, 30);
+  [C.line, C.line, C.line].forEach((c, i) => { ctx.beginPath(); ctx.arc(20 + i * 16, 15, 5, 0, 7); ctx.fillStyle = c; ctx.fill(); });
+  ctx.font = `12px JBM`; ctx.fillStyle = C.dim; ctx.textBaseline = 'middle';
+  ctx.fillText('Windows client  →  Linux server', 80, 15);
+
+  if (s.end) return endCard();
+
+  // home screen hint
+  txt(COLS / 2 - 13, 6, 'remote session · type /cd', C.dim);
+  // prompt box
+  const pr = 19;
+  box(2, pr, COLS - 2, pr + 3, C.surface, C.line);
+  txt(4, pr + 1, '>', C.lav, true);
+  txt(6, pr + 1, s.prompt || '', C.text);
+  if (s.cursor && !s.dialog) { ctx.fillStyle = C.text; ctx.fillRect(X(6 + (s.prompt || '').length), Y(pr + 1) + 3, CW, LH - 6); }
+  if (!s.prompt && !s.dialog) txt(7, pr + 1, 'Ask anything…', C.dim);
+  // footer
+  const fr = 24;
+  if (s.flash) { ctx.fillStyle = '#7ee7c722'; ctx.fillRect(X(2) - 6, Y(fr), CW * (s.footer.length) + 12, LH); }
+  txt(2, fr, s.footer, s.flash ? C.mint : C.muted, !!s.flash);
+  txt(COLS - 17, fr, 'server: linux', C.dim);
+
+  if (s.dialog) dialog(s.dialog);
+  if (s.key) keycap(s.key);
+}
+
+function dialog({ dir, query, sel }) {
+  const c0 = 14, c1 = COLS - 14, r0 = 3;
+  const list = rows(dir, query);
+  const r1 = r0 + 5 + Math.max(list.length, 1) + 1;
+  ctx.fillStyle = 'rgba(10,9,16,.55)'; ctx.fillRect(0, 30, W, H - 30);
+  box(c0, r0, c1, r1, C.dialog, C.line);
+  txt(c0 + 2, r0 + 1, 'Change directory: ', C.text, true);
+  txt(c0 + 20, r0 + 1, dir, C.mint, true);
+  txt(c1 - 5, r0 + 1, 'esc', C.dim);
+  // search
+  box(c0 + 2, r0 + 2.5, c1 - 2, r0 + 3.9, C.surface);
+  if (query) {
+    txt(c0 + 3, r0 + 2.7, query, C.text);
+    ctx.fillStyle = C.text; ctx.fillRect(X(c0 + 3 + query.length), Y(r0 + 2.7) + 3, 2, LH - 6);
+  } else txt(c0 + 3, r0 + 2.7, 'Search directories…', C.dim);
+  list.forEach((r, i) => {
+    const row = r0 + 4.5 + i;
+    const on = i === sel;
+    if (on) { ctx.fillStyle = C.mint; ctx.fillRect(X(c0 + 1), Y(row), X(c1 - 1) - X(c0 + 1), LH); }
+    txt(c0 + 2, row, on ? '›' : ' ', on ? C.selText : C.dim, true);
+    txt(c0 + 4, row, r.k, on ? C.selText : r.special ? C.lav : C.text, on || r.special);
+    txt(c0 + 26, row, r.d, on ? C.selText : C.dim);
+  });
+}
+
+function keycap(label) {
+  ctx.font = `bold 14px JBM`;
+  const w = ctx.measureText(label).width + 28, x = W - w - 20, y = 42;
+  rrect(x, y, w, 32, 8, C.surface); ctx.strokeStyle = C.line; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.roundRect(x + .5, y + .5, w - 1, 31, 8); ctx.stroke();
+  ctx.fillStyle = C.text; ctx.textBaseline = 'middle'; ctx.fillText(label, x + 14, y + 16);
+}
+
+let logoImg;
+async function loadLogo() {
+  logoImg = new Image(); logoImg.src = '../brand/logo-dark.svg'; await logoImg.decode();
+}
+function endCard() {
+  ctx.drawImage(logoImg, W / 2 - 60, 150, 120, 120);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = `800 36px JBM`;
+  const parts = [['/', C.mint], ['cd without the ', C.text], ['C:\\', C.red]];
+  const total = parts.reduce((a, [t]) => a + ctx.measureText(t).width, 0);
+  let x = W / 2 - total / 2; ctx.textAlign = 'left';
+  for (const [t, col] of parts) {
+    ctx.fillStyle = col; ctx.fillText(t, x, 330);
+    const w = ctx.measureText(t).width;
+    if (t === 'C:\\') { ctx.fillRect(x - 2, 328, w + 4, 4); }
+    x += w;
+  }
+  ctx.font = `16px JBM`; ctx.fillStyle = C.muted; ctx.textAlign = 'center';
+  ctx.fillText('opencode-remote-cd · community plugin for the OpenCode TUI', W / 2, 385);
+  ctx.textAlign = 'left';
+}
+
+// ---- storyboard -------------------------------------------------------------
+function script() {
+  const f = [];
+  const add = (s, ms, beat) => f.push({ s: { ...s }, ms, beat });
+  let footer = '/root';
+  add({ footer, cursor: true }, 700);
+  for (const p of ['/', '/c', '/cd']) add({ footer, prompt: p, cursor: true }, 130);
+  add({ footer, prompt: '/cd', cursor: true }, 450);
+  add({ footer, prompt: '/cd', cursor: true, key: '⏎ Enter' }, 250);
+  add({ footer, dialog: { dir: '/root', query: '', sel: 0 }, key: '⏎ Enter' }, 400);
+  add({ footer, dialog: { dir: '/root', query: '', sel: 0 } }, 900, 1);
+  for (const q of ['p', 'pr', 'pro', 'proj']) add({ footer, dialog: { dir: '/root', query: q, sel: 0 }, key: 'type: ' + q }, 150);
+  add({ footer, dialog: { dir: '/root', query: 'proj', sel: 0 } }, 650, 2);
+  add({ footer, dialog: { dir: '/root', query: 'proj', sel: 0 }, key: '⏎ Enter' }, 250);
+  add({ footer, dialog: { dir: '/root/projects', query: '', sel: 0 }, key: '⏎ Enter' }, 400);
+  add({ footer, dialog: { dir: '/root/projects', query: '', sel: 0 } }, 900, 3);
+  for (const q of ['w', 'we', 'web']) add({ footer, dialog: { dir: '/root/projects', query: q, sel: 0 }, key: 'type: ' + q }, 150);
+  add({ footer, dialog: { dir: '/root/projects', query: 'web', sel: 0 } }, 600);
+  add({ footer, dialog: { dir: '/root/projects', query: 'web', sel: 0 }, key: '⏎ Enter' }, 250, 4);
+  add({ footer, dialog: { dir: '/root/projects/webapp', query: '', sel: 0 }, key: '⏎ Enter' }, 400);
+  add({ footer, dialog: { dir: '/root/projects/webapp', query: '', sel: 0 } }, 1100);
+  add({ footer, dialog: { dir: '/root/projects/webapp', query: '', sel: 0 }, key: '⏎ Enter' }, 300, 5);
+  footer = '/root/projects/webapp:main';
+  add({ footer, flash: true, cursor: true, key: '⏎ Enter' }, 500);
+  add({ footer, flash: true, cursor: true }, 900, 6);
+  add({ footer, cursor: true }, 900);
+  add({ end: true }, 2200, 7);
+  return f;
+}
+
+await loadLogo();
+const frames = script();
+
+window.buildGif = () => {
+  // Shared palette from a sample of every distinct frame avoids flicker.
+  const imgs = frames.map(({ s }) => { draw(s); return ctx.getImageData(0, 0, W, H).data.slice(); });
+  const sample = new Uint8ClampedArray(imgs.length * W * 4 * 40);
+  imgs.forEach((d, i) => { for (let r = 0; r < 40; r++) sample.set(d.subarray((r * 15) * W * 4, (r * 15 + 1) * W * 4), (i * 40 + r) * W * 4); });
+  const palette = quantize(sample, 128);
+  const gif = GIFEncoder();
+  imgs.forEach((d, i) => gif.writeFrame(applyPalette(d, palette), W, H, { palette: i === 0 ? palette : undefined, delay: frames[i].ms, repeat: 0 }));
+  gif.finish();
+  const bytes = gif.bytes(); let bin = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+};
+
+// Storyboard sheet: the six beats from the brief, 3×2 at half size.
+window.buildStoryboard = () => {
+  const beats = [1, 2, 3, 4, 5, 6, 7].map((b) => frames.find((f) => f.beat === b).s);
+  const labels = ['1  /cd + Enter → picker at /root', '2  type "proj" → filters', '3  Enter → children of /root/projects', '4  type "web" → Enter descends', '5  Enter on Use this directory', '6  footer: /root/projects/webapp:main', '7  end card'];
+  const out = document.createElement('canvas'); const sw = W / 2, sh = H / 2, gap = 24, lab = 30;
+  out.width = sw * 3 + gap * 4; out.height = (sh + lab) * 3 + gap * 4;
+  const o = out.getContext('2d'); o.fillStyle = '#12111a'; o.fillRect(0, 0, out.width, out.height);
+  beats.forEach((s, i) => {
+    draw(s); const x = gap + (i % 3) * (sw + gap), y = gap + Math.floor(i / 3) * (sh + lab + gap);
+    o.font = `bold 14px JBM`; o.fillStyle = C.muted; o.textBaseline = 'top'; o.fillText(labels[i], x, y);
+    o.drawImage(cv, x, y + lab, sw, sh);
+  });
+  return out.toDataURL('image/png').split(',')[1];
+};
+
+window.ready = true;
+if (!new URLSearchParams(location.search).has('record')) {
+  let i = 0; const tick = () => { draw(frames[i].s); setTimeout(tick, frames[i].ms); i = (i + 1) % frames.length; }; tick();
+}
+</script>

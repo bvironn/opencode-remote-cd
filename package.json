@@ -1,0 +1,54 @@
+{
+  "name": "opencode-remote-cd",
+  "version": "0.1.0",
+  "description": "Remote-safe /cd for the OpenCode TUI: POSIX paths, directory completion and an interactive picker when the client and server run on different operating systems.",
+  "type": "module",
+  "license": "MIT",
+  "author": "opencode-remote-cd contributors",
+  "homepage": "https://github.com/bvironn/opencode-remote-cd#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bvironn/opencode-remote-cd.git"
+  },
+  "bugs": {
+    "url": "https://github.com/bvironn/opencode-remote-cd/issues"
+  },
+  "keywords": [
+    "opencode",
+    "opencode-plugin",
+    "tui",
+    "remote",
+    "ssh",
+    "wsl",
+    "windows",
+    "directory",
+    "cd",
+    "posix",
+    "tailscale"
+  ],
+  "exports": {
+    "./tui": "./src/tui.tsx"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "bunx tsc --noEmit",
+    "prepublishOnly": "bun test && bunx tsc --noEmit"
+  },
+  "devDependencies": {
+    "@opencode/plugin": "2.3.2",
+    "bun-types": "^1.3.0",
+    "typescript": "^5.9.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@opencode/plugin": ">=2.3.2 <3"
+  }
+}

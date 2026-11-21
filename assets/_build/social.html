@@ -1,0 +1,36 @@
+<!doctype html>
+<meta charset="utf-8">
+<link rel="stylesheet" href="theme.css">
+<script>document.documentElement.dataset.theme = new URLSearchParams(location.search).get('theme') || 'dark'</script>
+<style>
+  body { width: 1280px; height: 640px; display: grid; grid-template-columns: 520px 1fr; align-items: center; gap: 56px; padding: 0 80px; }
+  .logo { width: 120px; height: 120px; border-radius: 28px; box-shadow: 0 0 0 1px var(--line); }
+  h1 { font-size: 46px; font-weight: 800; letter-spacing: -.02em; margin-top: 36px; line-height: 1.15; }
+  h1 .slash { color: var(--mint); }
+  .name { font-size: 22px; margin-top: 22px; color: var(--muted); }
+  .sub { font-size: 17px; color: var(--dim); margin-top: 10px; line-height: 1.5; }
+  .term { border: 1px solid var(--line); border-radius: 14px; background: var(--surface); padding: 30px 34px; font-size: 21px; line-height: 1.9; }
+  .row { display: flex; gap: 14px; align-items: baseline; }
+  .tag { font-size: 13px; letter-spacing: .12em; text-transform: uppercase; border: 1px solid currentColor; border-radius: 5px; padding: 0 7px; width: 82px; text-align: center; flex: none; }
+  .div { border-top: 1px dashed var(--line); margin: 18px 0; }
+  .note { font-size: 15px; color: var(--dim); }
+  .chips { margin-top: 26px; display: flex; gap: 10px; font-size: 14px; flex-wrap: wrap; }
+</style>
+<body>
+  <div>
+    <div class="logo"></div>
+    <h1><span class="slash">/</span>cd without<br>the <span class="strike">C:\</span></h1>
+    <div class="name">opencode-remote-cd</div>
+    <div class="sub">Community plugin for the OpenCode TUI.<br>Windows client, Linux server, one /cd.</div>
+  </div>
+  <div>
+    <div class="term">
+      <div class="row"><span class="tag dim">before</span><span><span class="strike">C:\</span>root\projects</span></div>
+      <div class="note" style="padding-left:96px">✗ Location not found</div>
+      <div class="div"></div>
+      <div class="row"><span class="tag good">after</span><span class="good">/root/projects</span></div>
+      <div class="note" style="padding-left:96px">✓ resolved on the server</div>
+    </div>
+    <div class="chips"><span class="chip">POSIX paths</span><span class="chip">Server completion</span><span class="chip">Interactive picker</span></div>
+  </div>
+</body>

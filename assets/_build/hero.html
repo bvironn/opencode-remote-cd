@@ -1,0 +1,49 @@
+<!doctype html>
+<meta charset="utf-8">
+<link rel="stylesheet" href="theme.css">
+<script>document.documentElement.dataset.theme = new URLSearchParams(location.search).get('theme') || 'dark'</script>
+<style>
+  body { width: 800px; height: 440px; padding: 28px 32px; display: flex; flex-direction: column; gap: 22px; }
+  .term { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); overflow: hidden; }
+  .bar { display: flex; align-items: center; gap: 8px; padding: 9px 14px; border-bottom: 1px solid var(--line); font-size: 11.5px; color: var(--dim); }
+  .bar i { width: 9px; height: 9px; border-radius: 50%; background: var(--line); }
+  .bar span { margin-left: 8px; }
+  .panes { display: grid; grid-template-columns: 1fr 34px 1fr; }
+  .pane { padding: 14px 18px 16px; font-size: 13.5px; line-height: 1.75; white-space: pre; }
+  .label { font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; margin-bottom: 6px; display: flex; gap: 8px; align-items: center; }
+  .label b { font-weight: 700; padding: 1px 6px; border-radius: 4px; border: 1px solid currentColor; }
+  .arrow { display: grid; place-items: center; color: var(--dim); border-left: 1px dashed var(--line); border-right: 1px dashed var(--line); font-size: 16px; }
+  .foot { margin-top: 10px; display: flex; justify-content: space-between; border-top: 1px solid var(--line); padding-top: 8px; font-size: 12px; }
+  .foot.badfoot { color: var(--dim); }
+  .prompt { color: var(--lav); }
+  .pitch { display: flex; gap: 18px; align-items: center; }
+  .pitch .logo { width: 64px; height: 64px; flex: none; }
+  h1 { font-size: 27px; font-weight: 800; letter-spacing: -.01em; }
+  h1 .slash { color: var(--mint); }
+  p.sub { font-size: 13px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+  .chips { display: flex; gap: 10px; font-size: 12.5px; }
+</style>
+<body>
+  <div class="term">
+    <div class="bar"><i></i><i></i><i></i><span>Windows client → Linux server</span></div>
+    <div class="panes">
+      <div class="pane"><div class="label dim"><b>before</b> built-in /cd</div><span class="prompt">❯</span> /cd /root/projects
+<span style="color:var(--red)">✗</span> Failed to change directory
+  Location not found:
+  <span class="bad">C:\</span>root\projects<div class="foot badfoot"><span>/root</span><span>unchanged</span></div></div>
+      <div class="arrow">→</div>
+      <div class="pane"><div class="label good"><b>after</b> opencode-remote-cd</div><span class="prompt">❯</span> /cd /root/projects
+<span class="good">✓</span> Resolved on the server
+  POSIX rules, server home
+  <span class="good">/root/projects</span><div class="foot"><span class="good">/root/projects:main</span><span class="dim">moved</span></div></div>
+    </div>
+  </div>
+  <div class="pitch">
+    <div class="logo"></div>
+    <div>
+      <h1><span class="slash">/</span>cd without the <span class="strike">C:\</span></h1>
+      <p class="sub">A community plugin that makes OpenCode's TUI /cd work when client and server run different operating systems.</p>
+    </div>
+  </div>
+  <div class="chips"><span class="chip">POSIX paths</span><span class="chip">Server completion</span><span class="chip">Interactive picker</span></div>
+</body>

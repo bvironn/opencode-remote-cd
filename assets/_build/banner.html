@@ -1,0 +1,24 @@
+<!doctype html>
+<meta charset="utf-8">
+<link rel="stylesheet" href="theme.css">
+<script>document.documentElement.dataset.theme = new URLSearchParams(location.search).get('theme') || 'dark'</script>
+<style>
+  body { width: 1200px; height: 400px; display: flex; align-items: center; gap: 48px; padding: 0 80px; position: relative; overflow: hidden; }
+  .logo { width: 200px; height: 200px; flex: none; border-radius: 44px; box-shadow: 0 0 0 1px var(--line); }
+  .name { font-size: 46px; font-weight: 800; letter-spacing: -.02em; }
+  .name .dim { font-weight: 400; }
+  .line { font-size: 22px; color: var(--muted); margin-top: 14px; }
+  .path { margin-top: 30px; font-size: 22px; display: flex; gap: 18px; align-items: center; }
+  .path .arrow { color: var(--dim); }
+  .ghost { position: absolute; right: -40px; top: -90px; font-size: 520px; font-weight: 800; color: var(--surface-2); line-height: 1; }
+  body > :not(.ghost) { position: relative; }
+</style>
+<body>
+  <div class="ghost">/</div>
+  <div class="logo"></div>
+  <div>
+    <div class="name"><span class="dim">opencode-</span>remote-cd</div>
+    <div class="line">/cd without the C:\ · OpenCode TUI, remote server</div>
+    <div class="path"><span class="strike">C:\root\projects</span><span class="arrow">→</span><span class="good">/root/projects</span></div>
+  </div>
+</body>

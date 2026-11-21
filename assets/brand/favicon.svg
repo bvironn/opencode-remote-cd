@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <title>opencode-remote-cd</title>
+  <style>
+    .bg{fill:#faf4ed} .s{stroke:#1f7a68} .t{stroke:#26233a}
+    @media (prefers-color-scheme: dark){ .bg{fill:#191724} .s{stroke:#7ee7c7} .t{stroke:#e0def4} }
+  </style>
+  <rect class="bg" width="32" height="32" rx="7"/>
+  <path class="s" d="M9 25 L17 7" stroke-width="4.5" stroke-linecap="round"/>
+  <path class="t" d="M19.5 25 H25" stroke-width="3.5" stroke-linecap="round"/>
+</svg>
